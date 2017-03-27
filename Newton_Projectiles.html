@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Newton's Cannon - Projectile Motion</title>
+</head>
+<body	style="font-family:sans-serif;
+			font-size:15px;
+			width:600px;
+			margin-left:auto;
+			margin-right:auto;
+			background-color:#ddffe8;">
+
+	<h1	style="font-size:24px;
+			text-align:center;
+			color:#147a35;">Newton's Cannon & Projectile Motion</h1>
+	
+	<div	style="width:500px;
+			margin-left:auto;
+			margin-right:auto;
+			position:relative;">
+		<img src="NewtonDrawing.jpg" width="500" height="500"
+				style="position:absolute;">
+				
+		<canvas id="trailCanvas" width="500" height="500" 
+				style="position:absolute;">
+		</canvas>
+	
+		<canvas id="theCanvas" width="500" height="500"
+				style="position:relative;">
+			Canvas not supported; please update your browser.
+		</canvas>	
+	</div>
+	
+	<div	style="text-align:center;">
+		<input type="button" value="Fire!" onclick="fireProjectile();">
+		
+		Initial speed = <span id="speedReadout">6000</span> m/s
+		
+		<input 	type="range" id="speedSlider" 
+				min="0" max="11000" step="100" value="6000"
+				oninput="showSpeed();" onchange="showSpeed();">
+		
+		<input type="button" value="Clear trails" onclick="clearTrails();">
+	</div>
+	
+	<p>This simulation is based on Isaac Newton's thought experiment and illustration of firing a projectile from a high mountaintop at various speeds, as he described in <a href="https://en.wikipedia.org/wiki/Philosophi%C3%A6_Naturalis_Principia_Mathematica">A Treatise of the System of the World</a>.</p>
+	
+	<script>
+		var theCanvas = document.getElementById("theCanvas");
+		var theContext = theCanvas.getContext("2d");
+		
+		var trailCanvas = document.getElementById("trailCanvas");
+		var trailContext = trailCanvas.getContext("2d");
+
+		// set features of the image and Earth
+		var earthRadius = 6.37e6;		// Earth's radius in meters
+		var mountainHeight = earthRadius * 0.165;	// chosen to match image
+		
+		// position and velocity of the ball
+		var x, y, vx, vy;
+		
+		var timer;
+		
+		// Buttons and sliders from the page
+		var speedSlider = document.getElementById("speedSlider");
+		var speedReadout = document.getElementById("speedReadout");
+		
+		
+		function fireProjectile() {
+			window.clearTimeout(timer);
+			// initialize all of the variables and start moving the projectile
+			x = 0;
+			y = earthRadius + mountainHeight;
+			vx = Number(speedSlider.value);
+			vy = 0;
+			moveProjectile();
+		}
+		
+		function drawProjectile() {
+			// convert physical coordinates into canvas pixel coordinates
+			var metersPerPixel = earthRadius / (0.355 * theCanvas.width);
+			var pixelX = theCanvas.width/2 + x/metersPerPixel;
+			var pixelY = theCanvas.height/2 - y/metersPerPixel;
+		
+		
+			// first clear the screen so you don't get a trail
+			theContext.clearRect(0, 0, theCanvas.width, theCanvas.height);
+			// then re-draw the ball
+			theContext.beginPath();
+			theContext.arc(pixelX, pixelY, 5, 0, 2*Math.PI);
+			//theContext.fillStyle = "green"; // make the ball green
+			
+			// make the ball a gradient
+			var theGradient = theContext.createRadialGradient(pixelX-1, 
+					pixelY-2, 1, pixelX, pixelY, 5);
+			theGradient.addColorStop(0, "#f8fff7");
+			theGradient.addColorStop(0, "#21ff00");
+			theContext.fillStyle= theGradient;
+			theContext.fill();
+			
+			trailContext.fillRect(pixelX-0.5, pixelY-0.5, 1, 1);
+		}
+		
+		function moveProjectile() {
+			//x += 1; // first movement code that had it move across the screen
+			
+			// now use some physics
+			var newtonG = 6.67e-11;			// big G in SI units
+			var earthMass = 5.96e24;		// Earth mass in kg
+			var dt = 5;						// time step in seconds
+			var r = Math.sqrt(x*x + y*y);	// Find distance from center of earth
+			if (r > earthRadius) {
+				var accel = newtonG * earthMass / (r * r);	// find little g = a
+			
+				// get components of acceleration using similar triangles
+				// with radius compared to x and y
+				var ax = -accel * x / r;
+				var ay = -accel * y / r;
+			
+				// update the components of the projectile's velocity
+				vx += ax * dt;
+				vy += ay * dt;
+				
+				var lastx = x;
+				x += vx * dt;
+				y += vy * dt;
+				
+			}
+			
+			// now that you have the new position, just draw it
+			drawProjectile();
+			if (!((lastx < 0) && (x >= 0))) {
+				timer = window.setTimeout(moveProjectile, 1000/30);
+			}
+		}
+		
+		function showSpeed() {
+			speedReadout.innerHTML = speedSlider.value;
+		}
+		
+		function clearTrails() {
+			trailContext.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+		}
+	
+	</script>
+	
+	
+</body>
+</html>
